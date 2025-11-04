@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { SubscriptionCard } from './subscription-card'
 import type { Subscription } from '@/lib/db'
 
@@ -10,6 +10,37 @@ export function SubscriptionsList({ subscriptions }: { subscriptions: Subscripti
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
   const [showFilters, setShowFilters] = useState(false)
+
+  // === NEW: currency rates (match Dashboard logic) ===========================
+  const uniqueCurrencies = useMemo(
+    () => Array.from(new Set(subscriptions.map(s => s.currency).filter(Boolean))) as string[],
+    [subscriptions]
+  )
+
+  const [rates, setRates] = useState<Record<string, number>>({ INR: 1 })
+
+  useEffect(() => {
+    async function getRatesMap(currencies: string[]): Promise<Record<string, number>> {
+      if (currencies.length === 0 || (currencies.length === 1 && currencies[0] === 'INR')) {
+        return { INR: 1 }
+      }
+      try {
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/INR', { cache: 'force-cache' })
+        const data = await res.json()
+        const map: Record<string, number> = { INR: 1 }
+        currencies.forEach(cur => {
+          if (cur !== 'INR') map[cur] = data?.rates?.[cur] ? 1 / data.rates[cur] : 1
+        })
+        return map
+      } catch {
+        // same fallback as Dashboard
+        return { INR: 1, USD: 83, EUR: 90, GBP: 105 }
+      }
+    }
+
+    getRatesMap(uniqueCurrencies).then(setRates)
+  }, [uniqueCurrencies])
+  // ==========================================================================
 
   // Get unique categories
   const categories = Array.from(new Set(subscriptions.map(s => s.category).filter(Boolean)))
@@ -36,9 +67,9 @@ export function SubscriptionsList({ subscriptions }: { subscriptions: Subscripti
       case 'name':
         return a.name.localeCompare(b.name)
       case 'cost-high':
-        return b.cost - a.cost
+        return (typeof b.cost === 'number' ? b.cost : Number(b.cost)) - (typeof a.cost === 'number' ? a.cost : Number(a.cost))
       case 'cost-low':
-        return a.cost - b.cost
+        return (typeof a.cost === 'number' ? a.cost : Number(a.cost)) - (typeof b.cost === 'number' ? b.cost : Number(b.cost))
       case 'renewal':
         return new Date(a.renewalDate).getTime() - new Date(b.renewalDate).getTime()
       default:
@@ -48,13 +79,24 @@ export function SubscriptionsList({ subscriptions }: { subscriptions: Subscripti
 
   // Calculate filtered stats
   const activeCount = filteredSubscriptions.filter(s => s.status === 'active').length
+
   const totalCost = filteredSubscriptions
     .filter(s => s.status === 'active')
     .reduce((sum, sub) => {
-      if (sub.billingCycle === 'monthly') return sum + sub.cost
-      if (sub.billingCycle === 'yearly') return sum + sub.cost / 12
-      if (sub.billingCycle === 'quarterly') return sum + sub.cost / 3
-      return sum
+      // ensure numeric cost
+      const baseCost =
+        typeof sub.cost === 'number'
+          ? sub.cost
+          : Number(String(sub.cost).replace(/[^\d.\-]/g, '')) || 0
+
+      // convert to INR using same mapping as Dashboard
+      const rate = rates[sub.currency] ?? 1
+      let monthly = baseCost * rate
+
+      if (sub.billingCycle === 'yearly') monthly = monthly / 12
+      else if (sub.billingCycle === 'quarterly') monthly = monthly / 3
+
+      return sum + monthly
     }, 0)
 
   const activeFiltersCount = (statusFilter !== 'all' ? 1 : 0) + (categoryFilter !== 'all' ? 1 : 0) + (sortBy !== 'newest' ? 1 : 0)

@@ -47,9 +47,7 @@ export function SubscriptionCard({ subscription }: { subscription: Subscription 
   const getCurrencySymbol = (currency: string) => {
     const symbols: { [key: string]: string } = {
       INR: '₹',
-      USD: '$',
-      EUR: '€',
-      GBP: '£'
+      USD: '$'
     }
     return symbols[currency] || '$'
   }
@@ -85,7 +83,12 @@ export function SubscriptionCard({ subscription }: { subscription: Subscription 
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs text-gray-500 dark:text-gray-400">Cost</span>
             <span className="text-lg font-bold text-gray-900 dark:text-white">
-              {getCurrencySymbol(subscription.currency)}{subscription.cost.toFixed(2)}
+              {getCurrencySymbol(subscription.currency)}{(
+  (typeof subscription.cost === 'number' && Number.isFinite(subscription.cost))
+    ? subscription.cost
+    : Number(String(subscription.cost).replace(/[^\d.\-]/g, '')) || 0
+).toFixed(2)}
+
             </span>
           </div>
           <div className="flex justify-between items-center text-xs">

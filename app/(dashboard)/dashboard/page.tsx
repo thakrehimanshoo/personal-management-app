@@ -157,7 +157,12 @@ export default async function DashboardPage() {
                       </span>
                       <span className="font-semibold text-gray-900 dark:text-white">
                         {sub.currency === 'INR' ? '₹' : sub.currency === 'EUR' ? '€' : sub.currency === 'GBP' ? '£' : '$'}
-                        {sub.cost.toFixed(2)}
+                        {(
+  (typeof sub.cost === 'number' && Number.isFinite(sub.cost))
+    ? sub.cost
+    : Number(String(sub.cost).replace(/[^\d.\-]/g, '')) || 0
+).toFixed(2)}
+
                       </span>
                     </div>
                   </div>
