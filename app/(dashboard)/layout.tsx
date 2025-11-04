@@ -14,9 +14,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
       {/* Fixed Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow flex-shrink-0">
+      <header className="bg-white dark:bg-gray-800 shadow flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex justify-between items-center">
           <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
             Personal Management
@@ -37,27 +37,27 @@ export default async function DashboardLayout({
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-            {/* Sidebar Navigation */}
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 h-full">
+          <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 h-full">
+            {/* Sidebar - Horizontal on mobile, vertical on desktop */}
             <aside className="lg:w-64 flex-shrink-0">
-              <div className="lg:sticky lg:top-4">
-                <NavLinks />
-              </div>
+              <NavLinks />
             </aside>
 
-            {/* Main Content */}
-            <main className="flex-1 min-w-0">
-              {children}
+            {/* Main Content - Scrollable */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="lg:pr-4">
+                {children}
+              </div>
             </main>
           </div>
         </div>
       </div>
 
-      {/* Footer - Only show on desktop to save space */}
-      <footer className="hidden sm:block bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 py-3 sm:py-4">
+      {/* Fixed Footer */}
+      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 py-3 sm:py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Made with <span className="text-red-500">❤️</span> by{' '}
