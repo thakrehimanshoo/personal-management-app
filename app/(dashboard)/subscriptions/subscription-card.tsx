@@ -54,7 +54,7 @@ export function SubscriptionCard({ subscription }: { subscription: Subscription 
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-all duration-300 hover:border-blue-300 dark:hover:border-blue-700 flex flex-col h-full min-h-[280px]">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all">
         {/* Header */}
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 flex-1 pr-2">

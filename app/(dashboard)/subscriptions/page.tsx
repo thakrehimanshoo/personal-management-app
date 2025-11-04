@@ -39,44 +39,49 @@ export default async function SubscriptionsPage() {
   const totalYearlyCost = totalMonthlyCost * 12
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Subscriptions Manager
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Track and manage all your recurring subscriptions
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Subscriptions</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Track your recurring expenses
           </p>
         </div>
         <Link
           href="/subscriptions/new"
-          className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
+          className="w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2 bg-blue-600 text-white rounded-full lg:rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center shadow-lg"
         >
-          + New Subscription
+          <span className="text-2xl lg:text-base">+</span>
+          <span className="hidden lg:inline ml-2">New</span>
         </Link>
       </div>
 
-      {/* Cost Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-blue-600 rounded-xl shadow-sm p-6 text-white">
-          <h3 className="text-sm font-medium text-blue-100 mb-2">Monthly Cost</h3>
-          <p className="text-4xl font-bold mb-1">₹{totalMonthlyCost.toFixed(2)}</p>
-          <p className="text-sm text-blue-100">
-            Across {activeSubs.length} active subscription{activeSubs.length !== 1 ? 's' : ''}
-          </p>
+      {/* Cost Summary - Redesigned */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">₹</span>
+            </div>
+            <span className="text-xs text-blue-100 font-medium">Monthly</span>
+          </div>
+          <p className="text-3xl font-bold text-white mb-1">₹{Math.round(totalMonthlyCost)}</p>
+          <p className="text-xs text-blue-100">{activeSubs.length} active subscription{activeSubs.length !== 1 ? 's' : ''}</p>
         </div>
 
-        <div className="bg-purple-600 rounded-xl shadow-sm p-6 text-white">
-          <h3 className="text-sm font-medium text-purple-100 mb-2">Yearly Cost</h3>
-          <p className="text-4xl font-bold mb-1">₹{totalYearlyCost.toFixed(2)}</p>
-          <p className="text-sm text-purple-100">
-            Estimated annual spending
-          </p>
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <span className="text-white text-lg">₹</span>
+            </div>
+            <span className="text-xs text-purple-100 font-medium">Yearly</span>
+          </div>
+          <p className="text-3xl font-bold text-white mb-1">₹{Math.round(totalYearlyCost)}</p>
+          <p className="text-xs text-purple-100">Estimated annual cost</p>
         </div>
       </div>
 
-      {/* Subscriptions List */}
       <SubscriptionsList subscriptions={subscriptions} />
     </div>
   )

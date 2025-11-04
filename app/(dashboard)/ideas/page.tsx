@@ -14,34 +14,25 @@ export default async function IdeasPage() {
   const ideas = await db.idea.findMany(session.userId)
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Ideas Tracker
-        </h1>
+    <div className="space-y-4">
+      {/* Header with Action */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">Ideas</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Track and organize your ideas
+          </p>
+        </div>
         <Link
           href="/ideas/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="w-12 h-12 lg:w-auto lg:h-auto lg:px-4 lg:py-2 bg-blue-600 text-white rounded-full lg:rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center shadow-lg"
         >
-          + New Idea
+          <span className="text-2xl lg:text-base">+</span>
+          <span className="hidden lg:inline ml-2">New Idea</span>
         </Link>
       </div>
 
-      {ideas.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-            No ideas yet. Start tracking your brilliant ideas!
-          </p>
-          <Link
-            href="/ideas/new"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            Create Your First Idea
-          </Link>
-        </div>
-      ) : (
-        <IdeasList ideas={ideas} />
-      )}
+      <IdeasList ideas={ideas} />
     </div>
   )
 }
