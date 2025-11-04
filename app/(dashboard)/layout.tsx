@@ -69,18 +69,23 @@ export default async function DashboardLayout({
         </footer>
       </div>
 
-      {/* Mobile Layout - New Scrollable Version */}
-      <div className="lg:hidden bg-gray-50 dark:bg-gray-900">
-        {/* Sticky Header */}
-        <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-sm">
+{/* Mobile Layout - iOS Style */}
+      <div className="lg:hidden min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+        {/* Mobile Header */}
+        <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 backdrop-blur-lg bg-opacity-95 dark:bg-opacity-95">
           <div className="px-4 py-3 flex justify-between items-center">
-            <h1 className="text-base font-bold text-gray-900 dark:text-white">
-              Personal Management
-            </h1>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">PM</span>
+              </div>
+              <span className="text-base font-semibold text-gray-900 dark:text-white">
+                Personal Manager
+              </span>
+            </div>
             <form action="/api/auth/logout" method="POST">
               <button
                 type="submit"
-                className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-lg"
+                className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
                 Logout
               </button>
@@ -88,27 +93,17 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        {/* Sticky Navigation */}
-        <div className="sticky top-[52px] z-40 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-          <div className="px-4 py-2">
-            <NavLinks />
-          </div>
-        </div>
-
-        {/* Main Content - Free Scrolling */}
-        <main className="px-4 py-4 pb-20">
+        {/* Main Content */}
+        <main className="px-4 py-4">
           {children}
         </main>
 
-        {/* Footer */}
-        <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-3">
-          <div className="text-center">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Made with <span className="text-red-500">❤️</span> by{' '}
-              <span className="font-semibold text-gray-900 dark:text-white">Himanshoo</span>
-            </p>
+        {/* Bottom Navigation - Fixed at bottom */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 backdrop-blur-lg bg-opacity-95 dark:bg-opacity-95">
+          <div className="safe-area-inset-bottom">
+            <NavLinks />
           </div>
-        </footer>
+        </div>
       </div>
     </>
   )
