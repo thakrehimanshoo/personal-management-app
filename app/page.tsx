@@ -1,6 +1,15 @@
 import Link from 'next/link'
+import { getSession } from '@/lib/auth/session'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
+export const revalidate = 0 // ensure session check runs on every request
+
+export default async function Home() {
+  const session = await getSession()
+  if (session) {
+    redirect('/dashboard')
+  }
+
   return (
     <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto px-6 text-center">
