@@ -1,9 +1,20 @@
 @import "tailwindcss";
 
-/* Prevent body scroll */
-html, body {
-  height: 100%;
-  overflow: hidden;
+/* Desktop: Prevent body scroll (original behavior) */
+@media (min-width: 1024px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* Mobile: Allow body scroll */
+@media (max-width: 1023px) {
+  html, body {
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
 }
 
 :root {
@@ -53,6 +64,7 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
 /* Dark mode scrollbar */
 @media (prefers-color-scheme: dark) {
   ::-webkit-scrollbar-thumb {
@@ -100,6 +112,7 @@ body {
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
