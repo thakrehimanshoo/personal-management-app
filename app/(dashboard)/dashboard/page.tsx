@@ -1,166 +1,166 @@
 import { getSession } from '@/lib/auth/session'
-import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
+import type { Idea, Subscription } from '@/lib/db'
 import Link from 'next/link'
-import { getRatesMap, toINR } from '@/lib/currency'
 
 export default async function DashboardPage() {
   const session = await getSession()
 
   if (!session) {
-    redirect('/login')
+    return null
   }
 
+  // Get user's data
   const ideas = await db.idea.findMany(session.userId)
   const subscriptions = await db.subscription.findMany(session.userId)
 
+  // Calculate stats
+  const activeIdeas = ideas.filter((idea: Idea) => idea.status === 'active').length
+  const completedIdeas = ideas.filter((idea: Idea) => idea.status === 'completed').length
+  const activeSubscriptions = subscriptions.filter((sub: Subscription) => sub.status === 'active')
+
   // Get currency rates
   const uniqueCurrencies = Array.from(
-    new Set(subscriptions.map((s) => s.currency || 'INR'))
-  )
+    new Set(subscriptions.map((s: Subscription) => s.currency).filter(Boolean))
+  ) as string[]
+
   const rates = await getRatesMap(uniqueCurrencies)
 
-  // Calculate stats with currency conversion
-  const activeSubscriptions = subscriptions.filter(s => s.status === 'active')
-  const monthlyCost = activeSubscriptions.reduce((total, sub) => {
-    const baseINR = toINR(sub.cost, sub.currency, rates)
-    if (sub.billingCycle === 'monthly') return total + baseINR
-    if (sub.billingCycle === 'yearly') return total + baseINR / 12
-    if (sub.billingCycle === 'quarterly') return total + baseINR / 3
-    return total
+  // Calculate total monthly cost in INR
+  const totalMonthlyCost = activeSubscriptions.reduce((total: number, sub: Subscription) => {
+    const rate = rates[sub.currency] || 1
+    let monthlyCost = sub.cost * rate
+
+    if (sub.billingCycle === 'yearly') {
+      monthlyCost = monthlyCost / 12
+    } else if (sub.billingCycle === 'quarterly') {
+      monthlyCost = monthlyCost / 3
+    }
+
+    return total + monthlyCost
   }, 0)
 
-  // Get recent ideas (last 5)
-  const recentIdeas = ideas.slice(-5).reverse()
-
-  // Get upcoming renewals (within next 30 days)
+  // Get upcoming renewals (next 30 days)
   const today = new Date()
-  const thirtyDaysFromNow = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
-  const upcomingRenewals = activeSubscriptions
-    .filter(sub => {
-      const renewalDate = new Date(sub.renewalDate)
-      return renewalDate >= today && renewalDate <= thirtyDaysFromNow
-    })
-    .sort((a, b) => new Date(a.renewalDate).getTime() - new Date(b.renewalDate).getTime())
-    .slice(0, 5)
+  const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+  const upcomingRenewals = activeSubscriptions.filter((sub: Subscription) => {
+    const renewalDate = new Date(sub.renewalDate)
+    return renewalDate >= today && renewalDate <= thirtyDaysLater
+  })
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
-        Dashboard
-      </h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Welcome back! Here's an overview of your ideas and subscriptions.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Link href="/ideas" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
-          <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">
-            Total Ideas
-          </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">{ideas.length}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            {ideas.filter(i => i.status === 'active').length} active
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Total Ideas */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Ideas</h3>
+            <span className="text-2xl">💡</span>
+          </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{ideas.length}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {activeIdeas} active · {completedIdeas} completed
           </p>
-        </Link>
+        </div>
 
-        <Link href="/subscriptions" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
-          <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">
-            Active Subscriptions
-          </h3>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">{activeSubscriptions.length}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+        {/* Active Subscriptions */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Subscriptions</h3>
+            <span className="text-2xl">💳</span>
+          </div>
+          <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{activeSubscriptions.length}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {subscriptions.length} total
           </p>
-        </Link>
+        </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-lg shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
-          <h3 className="text-sm font-medium mb-2 opacity-90">
-            Monthly Cost
-          </h3>
-          <p className="text-3xl font-bold">₹{monthlyCost.toFixed(2)}</p>
-          <p className="text-sm opacity-90 mt-2">
-            ₹{(monthlyCost * 12).toFixed(2)} per year
+        {/* Monthly Cost */}
+        <div className="bg-blue-600 rounded-xl shadow-sm p-6 text-white">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-blue-100">Monthly Cost</h3>
+            <span className="text-2xl">₹</span>
+          </div>
+          <p className="text-3xl font-bold mb-1">₹{totalMonthlyCost.toFixed(2)}</p>
+          <p className="text-sm text-blue-100">
+            Across {activeSubscriptions.length} subscription{activeSubscriptions.length !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Recent Items */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Ideas */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Recent Ideas
-            </h2>
-            <Link href="/ideas" className="text-blue-600 hover:text-blue-700 text-sm">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Recent Ideas</h2>
+            <Link href="/ideas" className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
               View all →
             </Link>
           </div>
-          {recentIdeas.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No ideas yet. Start adding some!</p>
+          {ideas.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No ideas yet. Create your first one!</p>
           ) : (
             <div className="space-y-3">
-              {recentIdeas.map((idea) => (
-                <Link
-                  key={idea.id}
-                  href="/ideas"
-                  className="block p-3 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-medium text-gray-900 dark:text-white">{idea.title}</h3>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${idea.status === 'active' ? 'bg-green-100 text-green-800' :
-                        idea.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                          idea.status === 'archived' ? 'bg-gray-100 text-gray-800' :
-                            'bg-yellow-100 text-yellow-800'
-                      }`}>
+              {ideas.slice(0, 5).map((idea: Idea) => (
+                <div key={idea.id} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-1">{idea.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      idea.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                      idea.status === 'completed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-400'
+                    }`}>
                       {idea.status}
                     </span>
+                    {idea.category && (
+                      <span className="text-xs text-gray-500 dark:text-gray-400">📁 {idea.category}</span>
+                    )}
                   </div>
-                  {idea.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-1">
-                      {idea.description}
-                    </p>
-                  )}
-                </Link>
+                </div>
               ))}
             </div>
           )}
         </div>
 
         {/* Upcoming Renewals */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Upcoming Renewals
-            </h2>
-            <Link href="/subscriptions" className="text-blue-600 hover:text-blue-700 text-sm">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Upcoming Renewals</h2>
+            <Link href="/subscriptions" className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium">
               View all →
             </Link>
           </div>
           {upcomingRenewals.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No upcoming renewals in the next 30 days.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">No renewals in the next 30 days</p>
           ) : (
             <div className="space-y-3">
-              {upcomingRenewals.map((sub) => {
+              {upcomingRenewals.slice(0, 5).map((sub: Subscription) => {
                 const renewalDate = new Date(sub.renewalDate)
                 const daysUntil = Math.ceil((renewalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-                const costInINR = toINR(sub.cost, sub.currency, rates)
+                
                 return (
-                  <Link
-                    key={sub.id}
-                    href="/subscriptions"
-                    className="block p-3 bg-gray-50 dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">{sub.name}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          ₹{costInINR.toFixed(2)} • {renewalDate.toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded ${daysUntil <= 7 ? 'bg-orange-100 text-orange-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                        {daysUntil}d
+                  <div key={sub.id} className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <h3 className="font-medium text-gray-900 dark:text-white mb-1">{sub.name}</h3>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-orange-600 dark:text-orange-400">
+                        ⚠️ Renews in {daysUntil} day{daysUntil !== 1 ? 's' : ''}
+                      </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {sub.currency === 'INR' ? '₹' : sub.currency === 'EUR' ? '€' : sub.currency === 'GBP' ? '£' : '$'}
+                        {sub.cost.toFixed(2)}
                       </span>
                     </div>
-                  </Link>
+                  </div>
                 )
               })}
             </div>
@@ -169,4 +169,31 @@ export default async function DashboardPage() {
       </div>
     </div>
   )
+}
+
+// Helper function to get exchange rates
+async function getRatesMap(currencies: string[]): Promise<Record<string, number>> {
+  if (currencies.length === 0 || (currencies.length === 1 && currencies[0] === 'INR')) {
+    return { INR: 1 }
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.exchangerate-api.com/v4/latest/INR`,
+      { next: { revalidate: 3600 } } // Cache for 1 hour
+    )
+    const data = await response.json()
+    
+    const rates: Record<string, number> = { INR: 1 }
+    currencies.forEach((currency: string) => {
+      if (currency !== 'INR') {
+        rates[currency] = data.rates[currency] ? 1 / data.rates[currency] : 1
+      }
+    })
+    
+    return rates
+  } catch (error) {
+    console.error('Failed to fetch rates:', error)
+    return { INR: 1, USD: 83, EUR: 90, GBP: 105 }
+  }
 }
